@@ -40,10 +40,7 @@ except Exception as e:
     raise e
 
 # Helpful Wrapper code for handling autostart dependencies
-if getattr(sys, "frozen", False):
-    isScriptBundled = True
-else:
-    isScriptBundled = False
+isScriptBundled = bool(getattr(sys, "frozen", False))
 if not isScriptBundled:
     if platform.system() == "Windows":
         try:
@@ -158,11 +155,7 @@ def timeSince(epoch: int):
             unit = i
         else:
             break
-    return "Last online %s %s%s ago" % (
-        int(offset),
-        unit,
-        ("" if int(offset) == 1 else "s"),
-    )
+    return f'Last online {int(offset)} {unit}{"" if int(offset) == 1 else "s"} ago'
 
 
 applicationPath = getAppPath()
@@ -259,7 +252,7 @@ class GUI(Ui_MainWindow):
                     "[Service]",
                     "Type=simple",
                     "StandardOutput=journal",
-                    "WorkingDirectory=" + os.getcwd(),
+                    f"WorkingDirectory={os.getcwd()}",
                     "ExecStart="
                     + " ".join([sys.executable, os.path.abspath(__file__)]),
                     "",
@@ -290,9 +283,7 @@ class GUI(Ui_MainWindow):
                 # Rebuild the path if we're running inside Downloads (This assumes that only Downloads can have /private/var/folders)
                 if applicationPath.startswith("/private"):
                     applicationPathTmp = applicationPath.split("/")
-                    applicationPathTmp = applicationPathTmp[
-                        len(applicationPathTmp) - 4 : len(applicationPathTmp)
-                    ]
+                    applicationPathTmp = applicationPathTmp[len(applicationPathTmp) - 4:]
                     applicationPath = os.path.join(
                         os.path.expanduser("~/Downloads"), "/".join(applicationPathTmp)
                     )
@@ -379,13 +370,12 @@ class GUI(Ui_MainWindow):
         self.nSwitchIcon.setScaledContents(True)
 
         self.groupBox_6.setStyleSheet(
-            "background-color: #%s; border: 0px; border-radius: 0px;"
-            % ("fff" if not settings["dark"] else "212020")
+            f'background-color: #{"fff" if not settings["dark"] else "212020"}; border: 0px; border-radius: 0px;'
         )
         for i in range(4):
             if i == 3:
                 i += 2
-            group = self.stackedWidget.findChild(QGroupBox, "groupBox_%s" % (i + 3))
+            group = self.stackedWidget.findChild(QGroupBox, f"groupBox_{i + 3}")
             group.setStyleSheet(
                 "background-color: #%s; border: 1px solid #%s; border-radius: 8px;"
                 % (("fff", "dfdfdf") if not settings["dark"] else ("1c1b1b", "121111"))
@@ -393,12 +383,9 @@ class GUI(Ui_MainWindow):
 
             if i == 5:
                 i -= 2
-            button = self.stackedWidget.findChild(
-                QPushButton, "pushButton_%s" % (i + 2)
-            )
+            button = self.stackedWidget.findChild(QPushButton, f"pushButton_{i + 2}")
             button.setStyleSheet(
-                "background-color: transparent; border-radius: 0px; border: 0px; color: #%s;"
-                % ("3c3c3c" if not settings["dark"] else "fff")
+                f'background-color: transparent; border-radius: 0px; border: 0px; color: #{"3c3c3c" if not settings["dark"] else "fff"};'
             )
             button.setCursor(QCursor(Qt.PointingHandCursor))
             if i == 0:
@@ -520,7 +507,7 @@ class GUI(Ui_MainWindow):
         self.toggleStatus.toggled.connect(self.switch)
         self.toggleTheme.setChecked(settings["dark"])
         self.toggleTheme.toggled.connect(self.setMode)
-        self.toggleDiscord.setChecked(True if client.rpc else False)
+        self.toggleDiscord.setChecked(bool(client.rpc))
         self.toggleDiscord.toggled.connect(self.toggleConnect)
         self.startInSystemTray.setChecked(settings.get("startInSystemTray", False))
         self.startInSystemTray.toggled.connect(self.setVisibility)
@@ -610,9 +597,7 @@ class GUI(Ui_MainWindow):
             self.presenceText.adjustSize()
             state = user.presence.game.sysDescription
             if not state:
-                state = "Played for %s hours or more" % (
-                    int(user.presence.game.totalPlayTime / 60 / 5) * 5
-                )
+                state = f"Played for {int(user.presence.game.totalPlayTime / 60 / 5) * 5} hours or more"
                 if user.presence.game.totalPlayTime / 60 < 5:
                     state = "Played for a little while"
 
@@ -647,8 +632,7 @@ class GUI(Ui_MainWindow):
                 self.label_12.setFixedWidth(self.label_12.width() + 120)
                 self.label_12.setFixedHeight(36)
                 self.label_12.setText(
-                    "<a style='color: orange;'>Unable to connect to Discord!<br>%s</a>"
-                    % msg
+                    f"<a style='color: orange;'>Unable to connect to Discord!<br>{msg}</a>"
                 )
                 self.toggleDiscord.setHidden(True)
         else:
@@ -657,10 +641,7 @@ class GUI(Ui_MainWindow):
             self.label_12.setText("Discord:")
 
     def updateProfile(self, new):
-        if new:
-            client.api.targetID = userSelected
-        else:
-            client.api.targetID = None
+        client.api.targetID = userSelected if new else None
         with open(os.path.join(applicationPath, "private.txt"), "w") as file:
             file.write(
                 json.dumps(

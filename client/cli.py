@@ -36,11 +36,11 @@ class Discord:
         try:
             if not version:
                 version = getVersion()
-                if not version:
-                    version = input(
-                        "What is the current version of the Nintendo Switch Online Mobile app? The App Store says it is %s (Please enter like X.X.X)\n> "
-                        % version
-                    )
+            if not version:
+                version = input(
+                    "What is the current version of the Nintendo Switch Online Mobile app? The App Store says it is %s (Please enter like X.X.X)\n> "
+                    % version
+                )
             self.api = API(session_token, user_lang, targetID, version)
         except Exception as e:
             sys.exit(log(e))
@@ -84,9 +84,14 @@ class Discord:
                     if not self.api.friends:
                         self.api.getFriends()
                     self.api.targetID = input(
-                        "Which user are you?\n-----\n%s\n-----\nPlease enter the ID here: "
-                        % "\n-----\n".join(
-                            ["%s (%s)" % (x.name, x.nsaId) for x in client.api.friends]
+                        (
+                            "Which user are you?\n-----\n%s\n-----\nPlease enter the ID here: "
+                            % "\n-----\n".join(
+                                [
+                                    f"{x.name} ({x.nsaId})"
+                                    for x in client.api.friends
+                                ]
+                            )
                         )
                     )
                     if self.api.targetID not in (x.nsaId for x in client.api.friends):
@@ -113,18 +118,16 @@ class Discord:
                 continue
         self.user = self.api.user
 
-        presence = self.user.presence
         if self.rpc:
-            if presence.game.name:  # Please file an issue if this happens to fail
+            presence = self.user.presence
+            if presence.game.name:
                 if self.currentGame != presence.game.name:
                     self.currentGame = presence.game.name
                     self.start = int(time.time())
                 state = presence.game.sysDescription
                 if not state:
-                    state = "Played for %s hours or more" % (
-                        int(presence.game.totalPlayTime / 60 / 5) * 5
-                    )
-                    if presence.game.totalPlayTime / 60 < 5:
+                    state = f"Played for {int(presence.game.totalPlayTime / 60 / 5) * 5} hours or more"
+                    if presence.game.totalPlayTime < 300:
                         state = "Played for a little while"
                 try:
                     self.rpc.update(

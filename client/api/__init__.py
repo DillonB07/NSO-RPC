@@ -42,7 +42,7 @@ def log(info, time = time.time()):
 
 
 def getVersion():
-    for i in range(5):
+    for _ in range(5):
         try:
             r = requests.get('https://apps.apple.com/us/app/nintendo-switch-online/id1234806557', timeout = 10)
             break
@@ -53,9 +53,7 @@ def getVersion():
     if not version:
         return ''
     pattern = re.compile(r'(\d.\d.\d)')
-    if not re.search(pattern, version[0]):
-        return ''
-    return version[0]
+    return '' if not re.search(pattern, version[0]) else version[0]
 
 
 client_id = '71b963c1b7b6d119'
@@ -86,7 +84,7 @@ class API():
         self.headers = {
             'X-ProductVersion': nsoAppVersion,
             'X-Platform': 'iOS',
-            'User-Agent': 'Coral/%s (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4' % nsoAppVersion,
+            'User-Agent': f'Coral/{nsoAppVersion} (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4',
             'Accept': 'application/json',
             'Content-Type': 'application/json; charset=utf-8',
             'Host': 'api-lp1.znc.srv.nintendo.net',
@@ -136,7 +134,9 @@ class API():
             with open(path, 'rb') as file:
                 self.login = pickle.loads(file.read())
                 try:
-                    self.headers['Authorization'] = 'Bearer %s' % self.login['login'].account['result'].get('webApiServerCredential').get('accessToken')
+                    self.headers[
+                        'Authorization'
+                    ] = f"Bearer {self.login['login'].account['result'].get('webApiServerCredential').get('accessToken')}"
                 except Exception as e:
                     log('Failure with authorization: %s\nLogin returns %s' % (e, self.login['login'].account))
                     raise e
@@ -148,7 +148,9 @@ class API():
         login = Login(self.userInfo, self.user_lang, self.accessToken, self.guid)
         login.loginToAccount()
         try:
-            self.headers['Authorization'] = 'Bearer %s' % login.account['result'].get('webApiServerCredential').get('accessToken')  # Add authorization token
+            self.headers[
+                'Authorization'
+            ] = f"Bearer {login.account['result'].get('webApiServerCredential').get('accessToken')}"
         except Exception as e:
             raise Exception('Failure with authorization: %s\nLogin returns %s' % (e, login.account))
         self.login = {
@@ -179,7 +181,7 @@ class API():
 class Nintendo():
     def __init__(self, sessionToken, userLang):
         self.headers = {
-            'User-Agent': 'Coral/%s (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4' % nsoAppVersion,
+            'User-Agent': f'Coral/{nsoAppVersion} (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4',
             'Accept': 'application/json',
             'Accept-Language': userLang,
             'Accept-Encoding': 'gzip, deflate',
@@ -201,10 +203,10 @@ class Nintendo():
 class UsersMe():
     def __init__(self, accessToken, userLang):
         self.headers = {
-            'User-Agent': 'Coral/%s (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4' % nsoAppVersion,
+            'User-Agent': f'Coral/{nsoAppVersion} (com.nintendo.znca; build:1999; iOS 15.5.0) Alamofire/5.4.4',
             'Accept': 'application/json',
             'Accept-Language': userLang,
-            'Authorization': 'Bearer %s' % accessToken,
+            'Authorization': f'Bearer {accessToken}',
             'Host': 'api.accounts.nintendo.com',
             'Connection': 'Keep-Alive',
             'Accept-Encoding': 'gzip',
@@ -221,7 +223,7 @@ class UsersMe():
 class imink():
     def __init__(self, na_id, id_token, timestamp, guid, iteration):
         self.headers = {
-            'User-Agent': 'NSO-RPC/%s' % version,
+            'User-Agent': f'NSO-RPC/{version}',
             'Content-Type': 'application/json; charset=utf-8',
         }
         self.body = {
@@ -245,14 +247,14 @@ class Login():
         self.headers = {
             'Host': 'api-lp1.znc.srv.nintendo.net',
             'Accept-Language': userLang,
-            'User-Agent': 'com.nintendo.znca/' + nsoAppVersion + ' (Android/7.1.2)',
+            'User-Agent': f'com.nintendo.znca/{nsoAppVersion} (Android/7.1.2)',
             'Accept': 'application/json',
             'X-ProductVersion': nsoAppVersion,
             'Content-Type': 'application/json; charset=utf-8',
             'Connection': 'Keep-Alive',
             'Authorization': 'Bearer',
             'X-Platform': 'Android',
-            'Accept-Encoding': 'gzip'
+            'Accept-Encoding': 'gzip',
         }
 
         self.url = 'https://api-lp1.znc.srv.nintendo.net'
@@ -349,9 +351,11 @@ class Presence():
         self.game = Game(f.get('game'))
 
     def description(self):
-        return ('%s (updatedAt: %s, logoutAt: %s)\n' % (self.state, self.updatedAt, self.logoutAt)
-                + '   - Game: %s' % self.game.description()
-                )
+        return (
+            '%s (updatedAt: %s, logoutAt: %s)\n'
+            % (self.state, self.updatedAt, self.logoutAt)
+            + f'   - Game: {self.game.description()}'
+        )
 
 
 class Game():
@@ -364,19 +368,20 @@ class Game():
         self.sysDescription = f.get('sysDescription')
 
     def description(self):
-        return ('%s (sysDescription: %s)\n' % (self.name, self.sysDescription)
-                + '   - Game Icon: %s\n' % self.imageUri
-                + '   - Shop Uri: %s\n' % self.shopUri
-                + '   - Total Play Time: %s\n' % self.totalPlayTime
-                + '   - First Played At: %s' % self.firstPlayedAt
-                )
+        return (
+            '%s (sysDescription: %s)\n' % (self.name, self.sysDescription)
+            + '   - Game Icon: %s\n' % self.imageUri
+            + '   - Shop Uri: %s\n' % self.shopUri
+            + '   - Total Play Time: %s\n' % self.totalPlayTime
+            + f'   - First Played At: {self.firstPlayedAt}'
+        )
 
 
 class Session():
     def __init__(self):
         self.headers = {
             'Accept-Encoding': 'gzip',
-            'User-Agent': 'OnlineLounge/%s NASDKAPI Android' % nsoAppVersion,
+            'User-Agent': f'OnlineLounge/{nsoAppVersion} NASDKAPI Android',
         }
         self.Session = requests.Session()
 
@@ -390,18 +395,18 @@ class Session():
         url = 'https://accounts.nintendo.com/connect/1.0.0/authorize'
         params = {
             'client_id': client_id,
-            'redirect_uri': 'npf%s://auth' % client_id,
+            'redirect_uri': f'npf{client_id}://auth',
             'response_type': 'session_token_code',
             'scope': 'openid user user.birthday user.mii user.screenName',
             'session_token_code_challenge': authCodeChallenge.replace(b'=', b''),
             'session_token_code_challenge_method': 'S256',
             'state': state,
-            'theme': 'login_form'
+            'theme': 'login_form',
         }
         response = self.Session.get(url, headers = self.headers, params = params)
 
         webbrowser.open(response.history[0].url)
-        print('Open this link: %s' % response.history[0].url)
+        print(f'Open this link: {response.history[0].url}')
         tokenPattern = re.compile(r'(eyJhbGciOiJIUzI1NiJ9\.[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*)')
         code = tokenPattern.findall(receiveInput())[0]
 
